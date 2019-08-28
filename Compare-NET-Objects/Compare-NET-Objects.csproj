@@ -20,14 +20,25 @@
     <PackageTags>compare comparison equality equal deep objects difference compareobjects deepequal deepequals</PackageTags>
     <Description>What you have been waiting for. Perform a deep compare of any two .NET objects using reflection. Shows the differences between the two objects.</Description>
     <Authors>KellermanSoftware</Authors>
-    <Version>4.59.0</Version>
-    <AssemblyVersion>4.59.0.0</AssemblyVersion>
+    <Version>4.62.0</Version>
+    <AssemblyVersion>4.62.0.0</AssemblyVersion>
     <NeutralLanguage>en-US</NeutralLanguage>    
     <Company>Kellerman Software</Company>
-    <PackageReleaseNotes>Defect fixes.  https://github.com/GregFinzer/Compare-Net-Objects/issues/142
-https://github.com/GregFinzer/Compare-Net-Objects/issues/143
-https://github.com/GregFinzer/Compare-Net-Objects/issues/145
-https://github.com/GregFinzer/Compare-Net-Objects/issues/148</PackageReleaseNotes>
+    <PackageReleaseNotes>Defect Fixes:
+
+* Fix for negative number formatting in User Friendly report:  https://github.com/GregFinzer/Compare-Net-Objects/issues/166
+
+* Fix for GetHashCode treating objects as equal.  Fixes these issues:
+https://github.com/GregFinzer/Compare-Net-Objects/issues/169
+https://github.com/GregFinzer/Compare-Net-Objects/issues/157
+https://github.com/GregFinzer/Compare-Net-Objects/issues/149
+https://github.com/GregFinzer/Compare-Net-Objects/issues/122
+https://github.com/GregFinzer/Compare-Net-Objects/issues/113
+https://github.com/GregFinzer/Compare-Net-Objects/issues/34
+
+New Features:
+* Add ElapsedMilliseconds to .NET Standard Build
+* Performance improvements to unordered enumerable collections by @jsobell</PackageReleaseNotes>
     <Copyright>Copyright © 2019 Kellerman Software</Copyright>
   </PropertyGroup>
   

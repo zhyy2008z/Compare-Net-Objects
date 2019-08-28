@@ -10,7 +10,13 @@ namespace KellermanSoftware.CompareNetObjects
     /// </summary>
     public class ComparisonResult
     {
+        #region Class Variables
         private string _differencesString;
+        /// <summary>
+        /// Keep track of parent objects in the object hierarchy
+        /// </summary>
+        private readonly Dictionary<object, int> _parents = new Dictionary<object, int>();
+        #endregion
 
         #region Constructors
         /// <summary>
@@ -21,10 +27,7 @@ namespace KellermanSoftware.CompareNetObjects
         {
             Config = config;
             Differences = new List<Difference>();
-
-            #if !NETSTANDARD
-                Watch = new Stopwatch();
-            #endif
+            Watch = new Stopwatch();
         }
         #endregion
 
@@ -39,23 +42,19 @@ namespace KellermanSoftware.CompareNetObjects
         /// </summary>
         public ComparisonConfig Config { get; private set; }
 
-        #if !NETSTANDARD
-            internal Stopwatch Watch { get; set; }
-
-            /// <summary>
-            /// The amount of time in milliseconds it took for the comparison
-            /// </summary>
-            public long ElapsedMilliseconds
-            {
-                get { return Watch.ElapsedMilliseconds; }
-            }
-        #endif
+        /// <summary>
+        /// Used to time how long the comparison took
+        /// </summary>
+        internal Stopwatch Watch { get; set; }
 
         /// <summary>
-        /// Keep track of parent objects in the object hiearchy
+        /// The amount of time in milliseconds it took for the comparison
         /// </summary>
-        internal readonly Dictionary<int, int> Parents = new Dictionary<int, int>();
-
+        public long ElapsedMilliseconds
+        {
+            get { return Watch.ElapsedMilliseconds; }
+        }
+        
         /// <summary>
         /// The differences found during the compare
         /// </summary>
@@ -111,21 +110,19 @@ namespace KellermanSoftware.CompareNetObjects
         /// <summary>
         /// Add parent, handle references count
         /// </summary>
-        /// <param name="hash"></param>
-        protected internal void AddParent(int hash)
+        /// <param name="objectReference"></param>
+        protected internal void AddParent(object objectReference)
         {
-            if (hash == 0)
-            {
+            if (objectReference == null || _parents == null)
                 return;
-            }
 
-            if (!Parents.ContainsKey(hash))
+            if (!_parents.ContainsKey(objectReference))
             {
-                Parents.Add(hash, 1);
+                _parents.Add(objectReference, 0);
             }
             else
             {
-                Parents[hash]++;
+                _parents[objectReference]++;
             }
         }
 
@@ -134,15 +131,38 @@ namespace KellermanSoftware.CompareNetObjects
         /// <summary>
         /// Remove parent, handle references count
         /// </summary>
-        /// <param name="hash"></param>
-        protected internal void RemoveParent(int hash)
+        /// <param name="objectReference"></param>
+        protected internal void RemoveParent(object objectReference)
         {
-            if (Parents.ContainsKey(hash))
+            if (objectReference == null || _parents == null)
+                return;
+
+            try
             {
-                if (Parents[hash] <= 1)
-                    Parents.Remove(hash);
-                else Parents[hash]--;
+                if (_parents.ContainsKey(objectReference))
+                {
+                    if (_parents[objectReference] <= 1)
+                        _parents.Remove(objectReference);
+                    else _parents[objectReference]--;
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        /// <summary>
+        /// Returns true if we have encountered this parent before
+        /// </summary>
+        /// <param name="objectReference"></param>
+        /// <returns></returns>
+        protected internal bool IsParent(object objectReference)
+        {
+            if (objectReference == null || _parents == null)
+                return false;
+
+            return _parents.ContainsKey(objectReference);
         }
         #endregion
 

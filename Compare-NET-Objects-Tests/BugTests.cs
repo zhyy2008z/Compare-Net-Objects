@@ -6,6 +6,7 @@ using KellermanSoftware.CompareNetObjectsTests.TestClasses;
 using NUnit.Framework;
 using System.Drawing;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using KellermanSoftware.CompareNetObjects.Reports;
@@ -23,6 +24,7 @@ namespace KellermanSoftware.CompareNetObjectsTests
     {
         #region Class Variables
         private CompareLogic _compare;
+
         #endregion
 
         #region Setup/Teardown
@@ -48,49 +50,98 @@ namespace KellermanSoftware.CompareNetObjectsTests
 
         #region Tests
 
-        //public class abc
-        //{
-        //    public ExpandoObject ex;
-        //}
+        [Test]
+        public void NegativeIntegersShouldBeNegativeOnUserFriendlyReport()
+        {
+            List<object> groundTruth = new List<object>();
+            List<object> newResult = new List<object>();
 
-        //[Test]
-        //public void test()
-        //{
-        //    abc a = new abc()
-        //    {
-        //        ex = JsonConvert.DeserializeObject("{"test": "1"}")
-        //    };
 
-        //    abc b = new abc()
-        //    {
-        //        ex = new ExpandoObject()
-        //    };
+            groundTruth.Add(new { boo = 1, gg = 7 });
+            groundTruth.Add(new { boo = -5, gg = 9 });
+            newResult.Add(new { boo = -6, gg = 4 });
+            newResult.Add(new { boo = 5, gg = 23 });
 
-        //    CompareLogic compareLogic = new CompareLogic();
-        //    compareLogic.Config.MembersToIgnore.Add("*test*");
-        //    compareLogic.Config.MembersToIgnore.Add("*ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add("*.ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add("*abc.ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add("*.abc.ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add("test*");
-        //    compareLogic.Config.MembersToIgnore.Add("ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add(".ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add("abc.ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add(".abc.ex.test*");
-        //    compareLogic.Config.MembersToIgnore.Add("*test");
-        //    compareLogic.Config.MembersToIgnore.Add("*ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add("*.ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add("*abc.ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add("*.abc.ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add("test");
-        //    compareLogic.Config.MembersToIgnore.Add("ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add(".ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add("abc.ex.test");
-        //    compareLogic.Config.MembersToIgnore.Add(".abc.ex.test");
-        //    compareLogic.Config.MaxDifferences = 50;
+            CompareLogic compareLogicObject = new CompareLogic();
+            compareLogicObject.Config.MaxDifferences = int.MaxValue;
+            compareLogicObject.Config.IgnoreCollectionOrder = true;
 
-        //    ComparisonResult result = compareLogic.Compare(a, b);
-        //}
+            ComparisonResult assertionResult = compareLogicObject.Compare(groundTruth, newResult);
+
+            Console.WriteLine("DifferencesString");
+            Console.WriteLine(assertionResult.DifferencesString);
+
+            Console.WriteLine();
+            Console.WriteLine("UserFriendlyReport");
+            UserFriendlyReport friendlyReport = new UserFriendlyReport();
+            string result = friendlyReport.OutputString(assertionResult.Differences);
+            Console.WriteLine(result);
+
+            Assert.IsTrue(result.Contains("[{ boo = -5, gg = 9 }]"));
+        }
+
+        [Test]
+        public void ObjectWithSameHashCodeAndDifferentPropertiesShouldBeDifferent()
+        {
+            ClassWithOverriddenHashCode person1 = new ClassWithOverriddenHashCode();
+            person1.Name = "Weird Al Yankovic";
+            person1.MyCircularReference = person1;
+
+            ClassWithOverriddenHashCode person2 = new ClassWithOverriddenHashCode();
+            person2.Name = "Robin Williams";
+            person2.MyCircularReference = person2;
+
+            CompareLogic compareLogic = new CompareLogic();
+            ComparisonResult result = compareLogic.Compare(person1, person2);
+            Console.WriteLine(result.DifferencesString);
+            Assert.IsFalse(result.AreEqual);
+        }
+
+        [Test]
+        public void RefStructProperty()
+        {
+            var compareLogic = new CompareLogic(new ComparisonConfig
+            {
+                MembersToIgnore =
+                {
+                    "Item"
+                }
+            });
+
+            var differences = compareLogic.Compare(new RefStructClass(), new RefStructClass());
+            Assert.IsTrue(differences.AreEqual);
+        }
+
+#if !NETSTANDARD
+        [Test]
+        public void SaveAndLoadConfig()
+        {
+            //This is the comparison class
+            CompareLogic compareLogic = new CompareLogic();
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+
+            compareLogic.SaveConfiguration(filePath);
+            compareLogic.LoadConfiguration(filePath);
+
+
+            //Create a couple objects to compare
+            Person person1 = new Person();
+            person1.DateCreated = DateTime.Now;
+            person1.Name = "Greg";
+
+            Person person2 = new Person();
+            person2.Name = "John";
+            person2.DateCreated = person1.DateCreated;
+
+            ComparisonResult result = compareLogic.Compare(person1, person2);
+
+            //These will be different, write out the differences
+            if (!result.AreEqual)
+                Console.WriteLine(result.DifferencesString);
+            else
+                Console.WriteLine("Objects are the same");
+        }
+#endif
 
         [Test]
         public void When_CompareDateTimeOffsetWithOffsets_Is_False_Do_Not_Compare_Offsets()
